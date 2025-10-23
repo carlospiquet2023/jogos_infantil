@@ -55,6 +55,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            margin-top: 30px; /* Levantado */
         }
 
         /* O "ECRÃ" ONDE O JOGO ACONTECE */
@@ -134,7 +135,8 @@
                 "left . right"
                 ". down .";
             gap: 4px;
-            margin-top: -20px;
+            position: relative;
+            top: -40px; /* Levantado sem afetar layout */
         }
         #upButton { grid-area: up; border-radius: 8px 8px 0 0; }
         #leftButton { grid-area: left; border-radius: 8px 0 0 8px; }
@@ -142,8 +144,8 @@
         #downButton { grid-area: down; border-radius: 0 0 8px 8px; }
         
         .d-pad .control-button {
-            width: 38px; /* REDUZIDO de 40px */
-            height: 38px; /* REDUZIDO de 40px */
+            width: 42px; /* Aumentado para mobile */
+            height: 42px; /* Aumentado para mobile */
             border-radius: 4px;
         }
 
@@ -234,9 +236,9 @@
             <!-- Nome da Consola (Decorativo) --><div class="text-center text-white text-3xl font-bold" style="text-shadow: 2px 2px #450a0a; font-size: 24px;">SUPER
             </div>
 
-            <!-- Botões Start/Select (Centro) --><div class="flex justify-center start-select">
-                <button>SELECT</button>
-                <button>START</button>
+            <!-- Botões Start/Restart (Centro) --><div class="flex justify-center start-select">
+                <button id="restartBtn">RESTART</button>
+                <button id="startBtn">START</button>
             </div>
             
             <!-- Linha de D-Pad e Botão A --><div id="controls-row">
@@ -248,7 +250,7 @@
                     <button id="downButton" class="control-button">↓</button>
                 </div>
                 
-                <!-- Botão de Ação "A" (Direita) --><div style="align-self: flex-start; margin-top: -20px;">
+                <!-- Botão de Ação "A" (Direita) --><div style="align-self: flex-start; margin-top: -30px;">
                     <button id="shootButton" class="control-button">A</button>
                 </div>
 
@@ -717,13 +719,25 @@
         setupButton(downButton, 'ArrowDown');
         setupButton(shootButton, 'a'); // Botão "A" ativa a tecla 'a'
         
-        // Botão de recomeçar
+        // Botões Start e Restart
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        startBtn.addEventListener('click', () => {
+            init();
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            init();
+        });
+        
+        // Botão de recomeçar (do game over)
         restartButton.addEventListener('click', () => {
             init();
         });
 
         // --- Iniciar o Jogo ---
-        init();
+        // Removido init() automático, agora usa o botão START
         
     </script>
 </body>
