@@ -2,11 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#111827">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jogo da Memória (Genius)</title>
     <!-- 1. Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -55,31 +51,31 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="text-center mb-4 flex-shrink-0">
-        <h1 class="text-3xl font-bold mb-2">Jogo Genius</h1>
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold mb-2">Jogo Genius</h1>
         <!-- O status-display mostrará o nível e as instruções -->
-        <p id="status-display" class="text-lg text-gray-300 h-6">
+        <p id="status-display" class="text-xl text-gray-300 h-8">
             Aperte "Iniciar" para começar!
         </p>
     </div>
 
     <!-- Container principal do jogo -->
-    <div class="relative bg-gray-800 rounded-full p-4 shadow-2xl flex-1 flex items-center justify-center">
+    <div class="relative bg-gray-800 rounded-full p-6 shadow-2xl">
         <!-- O grid 2x2 para os 4 botões coloridos -->
-        <div id="game-board" class="grid grid-cols-2 gap-3 max-w-sm w-full">
+        <div id="game-board" class="grid grid-cols-2 gap-5">
             <!-- Os 'data-pad' são usados pelo JS para identificar os botões (0 a 3) -->
-            <div data-pad="0" class="pad w-full aspect-square bg-green-600 rounded-tl-full cursor-pointer border-4 border-gray-900"></div>
-            <div data-pad="1" class="pad w-full aspect-square bg-red-600 rounded-tr-full cursor-pointer border-4 border-gray-900"></div>
-            <div data-pad="2" class="pad w-full aspect-square bg-yellow-500 rounded-bl-full cursor-pointer border-4 border-gray-900"></div>
-            <div data-pad="3" class="pad w-full aspect-square bg-blue-600 rounded-br-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="0" class="pad w-36 h-36 sm:w-44 sm:h-44 bg-green-600 rounded-tl-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="1" class="pad w-36 h-36 sm:w-44 sm:h-44 bg-red-600 rounded-tr-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="2" class="pad w-36 h-36 sm:w-44 sm:h-44 bg-yellow-500 rounded-bl-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="3" class="pad w-36 h-36 sm:w-44 sm:h-44 bg-blue-600 rounded-br-full cursor-pointer border-4 border-gray-900"></div>
         </div>
         
         <!-- Círculo central com o botão de Iniciar -->
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div class="bg-gray-900 w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-4 border-gray-800">
-                <button id="start-button" class="bg-indigo-600 text-white font-bold py-2 px-3 sm:py-3 sm:px-4 rounded-full shadow-lg hover:bg-indigo-700 transition-colors pointer-events-auto text-sm sm:text-base">
+            <div class="bg-gray-900 w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center border-8 border-gray-800">
+                <button id="start-button" class="bg-indigo-600 text-white font-bold py-4 px-4 rounded-full shadow-lg hover:bg-indigo-700 transition-colors pointer-events-auto text-lg">
                     Iniciar
                 </button>
             </div>
@@ -87,10 +83,10 @@
     </div>
 
     <!-- Overlay de Fim de Jogo (inicialmente escondido) -->
-    <div id="game-over-overlay" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-4 hidden">
-        <h2 class="text-4xl font-bold text-red-500 mb-4">Fim de Jogo!</h2>
-        <p id="game-over-message" class="text-xl mb-6">Você chegou ao nível 5.</p>
-        <button id="restart-button" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors text-lg">
+    <div id="game-over-overlay" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
+        <h2 class="text-5xl font-bold text-red-500 mb-4">Fim de Jogo!</h2>
+        <p id="game-over-message" class="text-2xl mb-8">Você chegou ao nível 5.</p>
+        <button id="restart-button" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors text-xl">
             Jogar Novamente
         </button>
     </div>
