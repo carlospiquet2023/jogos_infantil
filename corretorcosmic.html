@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-pt" class="dark">
+<head>
+    <meta charset="UTF-8"> <!-- Corrigido! -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>Corredor Cósmico</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Estilo base */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Evita o "puxar para atualizar" ou saltos no telemóvel */
+            overscroll-behavior: none;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Safe area para notch de iPhone */
+        @supports(padding: max(0px)) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+        }
+        
+        /* Estilo da tela do jogo */
+        canvas {
+            background-color: #000;
+            /* Fundo de "espaço" subtil */
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.2) 1px, transparent 0);
+            background-size: 25px 25px;
+            display: block;
+            width: 100%; /* <-- A CORREÇÃO ESTÁ AQUI */
+            touch-action: none; /* Desativa o scroll no telemóvel */
+        }
+
+        /* Estilo do botão de jogo (Recomeçar) */
+        .game-button {
+            background-image: linear-gradient(to right, #4f46e5, #7c3aed);
+            box-shadow: 0 4px 15px 0 rgba(79, 70, 229, 0.75);
+            transition: all 0.3s ease-in-out;
+        }
+        .game-button:hover {
+            background-position: right center;
+            box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        /* Efeito de "brilho" néon para o texto */
+        .neon-text {
+            text-shadow:
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 15px #6366f1,
+                0 0 20px #6366f1,
+                0 0 25px #6366f1,
+                0 0 30px #6366f1,
+                0 0 35px #6366f1;
+        }
+
+        /* Painel de "Fim de Jogo" */
+        #gameOverScreen {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilos para os botões de controlo (A e B) */
+        .control-button {
+            min-height: 60px; /* Altura mínima maior */
+            background-color: rgba(79, 70, 229, 0.7); /* Cor base indigo semi-transparente */
+            border: 2px solid #6366f1; /* Borda indigo */
+            border-radius: 12px;
+            font-size: 1.25rem; /* 20px */
+            font-weight: bold;
+            color: white;
+            user-select: none; /* Impede a seleção de texto */
+            -webkit-user-select: none; /* Safari */
+            -webkit-tap-highlight-color: transparent; /* ADICIONADO - remove brilho no toque */
+            transition: all 0.1s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .control-button:active {
+            background-color: rgba(124, 58, 237, 0.9); /* Roxo quando pressionado */
+            transform: scale(0.95);
+        }
+
+        /* Estilo para o botão de ATIRAR (C) */
+        .control-button-shoot {
+            width: 80px; 
+            height: 80px;
+            background-color: rgba(220, 38, 38, 0.7); /* Vermelho */
+            border: 2px solid #ef4444; /* Borda vermelha */
+            border-radius: 50%; /* Círculo */
+            font-size: 1.5rem; /* 24px */
+            font-weight: bold;
+            color: white;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent; /* ADICIONADO - remove brilho no toque */
+            transition: all 0.1s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .control-button-shoot:active {
+            background-color: rgba(239, 68, 68, 0.9); /* Vermelho mais forte */
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full h-full flex flex-col items-center justify-between p-2 bg-gray-900 text-white">
+        
+        <h1 class="text-2xl font-black mb-1 neon-text">Corredor Cósmico</h1>
+        
+        <div class="flex justify-between text-lg font-bold mb-2 px-2 w-full">
+            <div>
+                <span>Pontuação: </span>
+                <span id="scoreEl">0</span>
+            </div>
+            <div>
+                <span>Recorde: </span>
+                <span id="highScoreEl">0</span>
+            </div>
+        </div>
+
+        <div class="relative flex-1 w-full rounded-lg overflow-hidden shadow-2xl border-2 border-indigo-500 bg-black">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="gameOverScreen" class="absolute inset-0 flex-col items-center justify-center hidden">
+                <h2 class="text-5xl font-black text-white neon-text mb-4">Fim de Jogo!</h2>
+                <p class="text-xl text-gray-200 mb-6">A tua pontuação: <span id="finalScoreEl">0</span></p>
+                <button id="restartButton" class="game-button text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg">
+                    Recomeçar
+                </button>
+            </div>
+        </div>
+        
+        <!-- Instruções Atualizadas -->
+        <p class="text-sm text-gray-400 text-center mb-2">
+            Use (← →), (a) (b), ou deslize. Atire com (c) ou [ESPAÇO].
+        </p>
+        
+        <!-- Novos Botões de Controlo (Layout Atualizado) -->
+        <div class="flex justify-between items-center w-full gap-2 p-2">
+            <!-- Botões de Movimento (Esquerda) -->
+            <button id="leftButton" class="control-button flex-1">← A</button>
+            <button id="rightButton" class="control-button flex-1">B →</button>
+            
+            <!-- Botão de Tiro (Direita) -->
+            <button id="shootButton" class="control-button-shoot">🚀 C</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuração do Jogo ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const scoreEl = document.getElementById('scoreEl');
+        const highScoreEl = document.getElementById('highScoreEl');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreEl = document.getElementById('finalScoreEl');
+        const restartButton = document.getElementById('restartButton');
+        
+        const gameWidth = 400;
+        const gameHeight = 600;
+        canvas.width = gameWidth;
+        canvas.height = gameHeight;
+
+        // --- Variáveis do Jogo ---
+        let player, obstacles, projectiles, particles;
+        let score, highScore, gameOver, animationId;
+        let obstacleSpeed, spawnRate, shootCooldown;
+        let frameCount = 0; // Contador de frames
+
+        // --- Nave do Jogador ---
+        class Player {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+                this.speed = 10;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                // Desenha um triângulo (nave)
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y); // Ponta de cima
+                ctx.lineTo(this.x, this.y + this.height); // Canto inferior esquerdo
+                ctx.lineTo(this.x + this.width, this.y + this.height); // Canto inferior direito
+                ctx.closePath();
+                ctx.fill();
+                
+                // Desenha o "fogo" da nave
+                ctx.fillStyle = '#f97316'; // Laranja
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y + this.height + 5);
+                ctx.lineTo(this.x + this.width / 2 - 5, this.y + this.height);
+                ctx.lineTo(this.x + this.width / 2 + 5, this.y + this.height);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            update(dx) {
+                this.x += dx * this.speed;
+                // Limites do ecrã
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+            }
+            
+            moveTo(x) {
+                this.x = x - this.width / 2;
+                // Limites do ecrã
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+            }
+        }
+
+        // --- Projétil (Laser) ---
+        class Projectile {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 5;
+                this.height = 15;
+                this.color = '#33ffcc'; // Ciano néon
+                this.speed = 10;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.shadowBlur = 0; // Resetar o blur
+            }
+
+            update() {
+                this.y -= this.speed;
+            }
+        }
+
+        // --- Partícula (Para Explosão) ---
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.color = color;
+                this.opacity = 1;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 5,
+                    y: (Math.random() - 0.5) * 5
+                };
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.restore();
+            }
+
+            update() {
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.opacity -= 0.02; // Desvanece
+            }
+        }
+
+        // --- Obstáculos (Asteroides) ---
+        class Obstacle {
+            constructor(x, y, size, speed, color) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.speed = speed;
+                this.color = color;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+            
+            update() {
+                this.y += this.speed;
+            }
+        }
+
+        // --- Funções Principais do Jogo ---
+        
+        function init() {
+            player = new Player(canvas.width / 2 - 15, canvas.height - 50, 30, 30, '#ec4899'); // Rosa néon
+            obstacles = [];
+            projectiles = [];
+            particles = [];
+            score = 0;
+            highScore = localStorage.getItem('cosmicRunnerHighScore') || 0; 
+            gameOver = false;
+            obstacleSpeed = 3;
+            spawnRate = 100; // a cada 100 frames
+            shootCooldown = 0;
+            frameCount = 0;
+            
+            scoreEl.innerText = score;
+            highScoreEl.innerText = highScore;
+            gameOverScreen.classList.add('hidden');
+            gameOverScreen.classList.remove('flex');
+
+            if (animationId) cancelAnimationFrame(animationId);
+            animate();
+        }
+
+        function spawnObstacle() {
+            const size = Math.random() * (40 - 15) + 15; // Tamanho entre 15 e 40
+            const x = Math.random() * (canvas.width - size);
+            const y = -size; 
+            const speed = Math.random() * (obstacleSpeed - (obstacleSpeed - 1.5)) + (obstacleSpeed - 1.5);
+            const color = `hsl(${Math.random() * 60 + 190}, 100%, 70%)`; // Tons de azul/ciano/roxo
+            
+            obstacles.push(new Obstacle(x, y, size, speed, color));
+        }
+
+        function createExplosion(obstacle) {
+            for (let i = 0; i < 20; i++) { // Cria 20 partículas
+                particles.push(new Particle(
+                    obstacle.x + obstacle.size / 2, 
+                    obstacle.y + obstacle.size / 2, 
+                    obstacle.color
+                ));
+            }
+        }
+
+        function checkCollision(rect1, rect2) {
+            // AABB - Axis-Aligned Bounding Box (para o jogador)
+            return (
+                rect1.x < rect2.x + rect2.size &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.size &&
+                rect1.y + rect1.height > rect2.y
+            );
+        }
+
+        // Função para atirar
+        function fireProjectile() {
+            projectiles.push(new Projectile(player.x + player.width / 2 - 2.5, player.y));
+            shootCooldown = 15; // 15 frames de cooldown
+        }
+
+        function endGame() {
+            gameOver = true;
+            cancelAnimationFrame(animationId);
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('cosmicRunnerHighScore', highScore);
+                highScoreEl.innerText = highScore;
+            }
+            
+            finalScoreEl.innerText = score;
+            gameOverScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('flex');
+        }
+
+        // --- O Loop do Jogo (Animação) ---
+        function animate() {
+            if (gameOver) return;
+            
+            animationId = requestAnimationFrame(animate);
+            // Limpa o ecrã com rasto
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            player.draw();
+
+            // Atualiza Partículas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                if (p.opacity <= 0) particles.splice(i, 1);
+            }
+            
+            // Atualiza Projéteis
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                proj.update();
+                proj.draw();
+                if (proj.y + proj.height < 0) projectiles.splice(i, 1);
+            }
+
+            // Spawn de Obstáculos
+            if (frameCount % Math.floor(spawnRate) === 0) {
+                spawnObstacle();
+            }
+            
+            // Atualiza Obstáculos
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obstacle = obstacles[i];
+                obstacle.update();
+                obstacle.draw();
+                
+                // 1. Colisão com o JOGADOR
+                if (checkCollision(player, obstacle)) {
+                    createExplosion(obstacle); 
+                    endGame();
+                    return; // Para a frame
+                }
+
+                // 2. Colisão com PROJÉTEIS
+                let hit = false;
+                for (let j = projectiles.length - 1; j >= 0; j--) {
+                    const proj = projectiles[j];
+                    
+                    if (proj.x < obstacle.x + obstacle.size &&
+                        proj.x + proj.width > obstacle.x &&
+                        proj.y < obstacle.y + obstacle.size &&
+                        proj.y + proj.height > obstacle.y) 
+                    {
+                        createExplosion(obstacle);
+                        projectiles.splice(j, 1);
+                        obstacles.splice(i, 1);
+                        score += 10; // +10 pontos por destruir
+                        scoreEl.innerText = score;
+                        hit = true;
+                        break; 
+                    }
+                }
+
+                if (hit) continue; // Obstáculo destruído, passa ao próximo
+                
+                // 3. Obstáculo saiu do ecrã
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score++; // +1 ponto por desviar
+                    scoreEl.innerText = score;
+                }
+            }
+            
+            // Controlo do Jogador
+            if (keys.ArrowLeft.pressed || keys.a.pressed) {
+                player.update(-1);
+            }
+            if (keys.ArrowRight.pressed || keys.b.pressed) {
+                player.update(1);
+            }
+
+            // Controlo de Tiro
+            if (shootCooldown > 0) {
+                shootCooldown--;
+            }
+            if ((keys.c.pressed || keys[' '].pressed) && shootCooldown === 0 && !gameOver) {
+                fireProjectile();
+            }
+            
+            // Aumenta Dificuldade
+            const currentDifficultyLevel = Math.floor(score / 50); // A cada 50 pontos
+            obstacleSpeed = 3 + currentDifficultyLevel * 0.4;
+            const newSpawnRate = 100 - currentDifficultyLevel * 5;
+            spawnRate = Math.max(30, newSpawnRate); // Limite mínimo de 30 frames
+
+            frameCount++;
+        }
+
+        // --- Controlores ---
+        
+        // Teclado
+        const keys = {
+            ArrowLeft: { pressed: false },
+            ArrowRight: { pressed: false },
+            a: { pressed: false },
+            b: { pressed: false },
+            c: { pressed: false }, // NOVO
+            ' ': { pressed: false }  // NOVO (para Espaço)
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (gameOver && e.key === ' ') { // Permite recomeçar com Espaço
+                init();
+                return;
+            }
+            if (gameOver) return;
+            
+            const key = e.key.toLowerCase();
+            if (key === 'arrowleft' || key === 'a') { keys.ArrowLeft.pressed = true; keys.a.pressed = true; }
+            if (key === 'arrowright' || key === 'b') { keys.ArrowRight.pressed = true; keys.b.pressed = true; }
+            if (key === 'c') keys.c.pressed = true;
+            if (key === ' ') { keys[' '].pressed = true; e.preventDefault(); } // e.preventDefault() para não fazer scroll
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'arrowleft' || key === 'a') { keys.ArrowLeft.pressed = false; keys.a.pressed = false; }
+            if (key === 'arrowright' || key === 'b') { keys.ArrowRight.pressed = false; keys.b.pressed = false; }
+            if (key === 'c') keys.c.pressed = false;
+            if (key === ' ') keys[' '].pressed = false;
+        });
+        
+        // Tátil (Canvas)
+        function getTouchPos(canvasDom, touchEvent) {
+            const rect = canvasDom.getBoundingClientRect();
+            return { x: touchEvent.touches[0].clientX - rect.left };
+        }
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameOver) return;
+            e.preventDefault(); 
+            player.moveTo(getTouchPos(canvas, e).x);
+        }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameOver) return;
+            e.preventDefault(); 
+            player.moveTo(getTouchPos(canvas, e).x);
+        }, { passive: false });
+        
+        // Controlores dos botões no ecrã
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
+        const shootButton = document.getElementById('shootButton'); // NOVO
+
+        const preventContextMenu = (e) => e.preventDefault();
+
+        // Botão ESQUERDO (a)
+        leftButton.addEventListener('mousedown', (e) => { keys.a.pressed = true; e.preventDefault(); });
+        leftButton.addEventListener('mouseup', (e) => { keys.a.pressed = false; e.preventDefault(); });
+        leftButton.addEventListener('mouseleave', (e) => { keys.a.pressed = false; e.preventDefault(); });
+        leftButton.addEventListener('touchstart', (e) => { keys.a.pressed = true; e.preventDefault(); }, { passive: false });
+        leftButton.addEventListener('touchend', (e) => { keys.a.pressed = false; e.preventDefault(); }, { passive: false });
+        leftButton.addEventListener('contextmenu', preventContextMenu);
+
+        // Botão DIREITO (b)
+        rightButton.addEventListener('mousedown', (e) => { keys.b.pressed = true; e.preventDefault(); });
+        rightButton.addEventListener('mouseup', (e) => { keys.b.pressed = false; e.preventDefault(); });
+        rightButton.addEventListener('mouseleave', (e) => { keys.b.pressed = false; e.preventDefault(); });
+        rightButton.addEventListener('touchstart', (e) => { keys.b.pressed = true; e.preventDefault(); }, { passive: false });
+        rightButton.addEventListener('touchend', (e) => { keys.b.pressed = false; e.preventDefault(); }, { passive: false });
+        rightButton.addEventListener('contextmenu', preventContextMenu);
+        
+        // Botão ATIRAR (c) - NOVO
+        shootButton.addEventListener('mousedown', (e) => { keys.c.pressed = true; e.preventDefault(); });
+        shootButton.addEventListener('mouseup', (e) => { keys.c.pressed = false; e.preventDefault(); });
+        shootButton.addEventListener('mouseleave', (e) => { keys.c.pressed = false; e.preventDefault(); });
+        shootButton.addEventListener('touchstart', (e) => { keys.c.pressed = true; e.preventDefault(); }, { passive: false });
+        shootButton.addEventListener('touchend', (e) => { keys.c.pressed = false; e.preventDefault(); }, { passive: false });
+        shootButton.addEventListener('contextmenu', preventContextMenu);
+        
+        // Botão de recomeçar
+        restartButton.addEventListener('click', () => {
+            init();
+        });
+
+        // --- Iniciar o Jogo ---
+        init();
+        
+    </script>
+</body>
+</html>

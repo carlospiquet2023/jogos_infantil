@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <title>Jogo da Memória (Genius)</title>
+    <!-- 1. Carrega o Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Carrega o Tone.js para o som -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    
+    <!-- 3. Estilos personalizados para o jogo -->
+    <style>
+        /* Define a fonte Inter (padrão do Tailwind) */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Estilo base para os botões (pads) */
+        .pad {
+            transition: all 0.1s ease-in-out;
+        }
+
+        /* * Classe "lit" (aceso) que será adicionada via JavaScript.
+         * Aumenta o brilho, a escala e adiciona uma sombra colorida
+         * para dar o efeito de "luz acesa".
+         */
+        .pad.lit {
+            filter: brightness(1.75);
+            transform: scale(1.05);
+        }
+        
+        /* Sombras coloridas específicas para cada botão quando aceso */
+        .pad[data-pad="0"].lit {
+            box-shadow: 0 0 35px 10px #22c55e; /* green-500 */
+        }
+        .pad[data-pad="1"].lit {
+            box-shadow: 0 0 35px 10px #ef4444; /* red-500 */
+        }
+        .pad[data-pad="2"].lit {
+            box-shadow: 0 0 35px 10px #eab308; /* yellow-500 */
+        }
+        .pad[data-pad="3"].lit {
+            box-shadow: 0 0 35px 10px #3b82f6; /* blue-500 */
+        }
+
+        /* Estilo para desabilitar cliques (enquanto o computador joga) */
+        .pad.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+
+    <div class="text-center mb-4 flex-shrink-0">
+        <h1 class="text-3xl font-bold mb-2">Jogo Genius</h1>
+        <!-- O status-display mostrará o nível e as instruções -->
+        <p id="status-display" class="text-lg text-gray-300 h-6">
+            Aperte "Iniciar" para começar!
+        </p>
+    </div>
+
+    <!-- Container principal do jogo -->
+    <div class="relative bg-gray-800 rounded-full p-4 shadow-2xl flex-1 flex items-center justify-center">
+        <!-- O grid 2x2 para os 4 botões coloridos -->
+        <div id="game-board" class="grid grid-cols-2 gap-3 max-w-sm w-full">
+            <!-- Os 'data-pad' são usados pelo JS para identificar os botões (0 a 3) -->
+            <div data-pad="0" class="pad w-full aspect-square bg-green-600 rounded-tl-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="1" class="pad w-full aspect-square bg-red-600 rounded-tr-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="2" class="pad w-full aspect-square bg-yellow-500 rounded-bl-full cursor-pointer border-4 border-gray-900"></div>
+            <div data-pad="3" class="pad w-full aspect-square bg-blue-600 rounded-br-full cursor-pointer border-4 border-gray-900"></div>
+        </div>
+        
+        <!-- Círculo central com o botão de Iniciar -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="bg-gray-900 w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-4 border-gray-800">
+                <button id="start-button" class="bg-indigo-600 text-white font-bold py-2 px-3 sm:py-3 sm:px-4 rounded-full shadow-lg hover:bg-indigo-700 transition-colors pointer-events-auto text-sm sm:text-base">
+                    Iniciar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de Fim de Jogo (inicialmente escondido) -->
+    <div id="game-over-overlay" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-4 hidden">
+        <h2 class="text-4xl font-bold text-red-500 mb-4">Fim de Jogo!</h2>
+        <p id="game-over-message" class="text-xl mb-6">Você chegou ao nível 5.</p>
+        <button id="restart-button" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors text-lg">
+            Jogar Novamente
+        </button>
+    </div>
+
+    <script>
+        // --- 1. Referências do DOM ---
+        const gameBoard = document.getElementById('game-board');
+        const pads = document.querySelectorAll('.pad');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const statusDisplay = document.getElementById('status-display');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        const gameOverMessage = document.getElementById('game-over-message');
+
+        // --- 2. Configuração de Áudio (Tone.js) ---
+        // Cria um sintetizador (som de teclado) e o conecta à saída de áudio
+        const synth = new Tone.Synth().toDestination();
+        
+        // Mapeia cada botão (0-3) a uma nota musical
+        const padNotes = {
+            0: 'C4', // Verde
+            1: 'E4', // Vermelho
+            2: 'G4', // Amarelo
+            3: 'C5'  // Azul
+        };
+        // Nota para "Fim de Jogo"
+        const failNote = 'C3';
+
+        // --- 3. Variáveis de Estado do Jogo ---
+        let sequence = [];        // A sequência que o computador gera
+        let playerSequence = [];  // A sequência que o jogador insere
+        let level = 0;
+        let gameState = 'idle';   // 'idle', 'computer-turn', 'player-turn', 'game-over'
+
+        // --- 4. Funções Principais do Jogo ---
+
+        /**
+         * Função utilitária para criar pausas (delay)
+         */
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /**
+         * Calcula a velocidade do jogo baseado no nível.
+         * Fica mais rápido a cada nível, com um limite.
+         */
+        function getSpeed() {
+            const baseSpeed = 500; // Duração da luz acesa (ms)
+            const speedReduction = level * 20;
+            return Math.max(150, baseSpeed - speedReduction); // Nunca fica mais rápido que 150ms
+        }
+
+        /**
+         * Acende um botão, toca a nota e depois apaga.
+         * Retorna uma Promise que resolve quando a animação termina.
+         */
+        function lightUpPad(padIndex) {
+            return new Promise(resolve => {
+                const pad = document.querySelector(`.pad[data-pad="${padIndex}"]`);
+                const note = padNotes[padIndex];
+                const speed = getSpeed();
+
+                // 1. Toca a nota
+                synth.triggerAttackRelease(note, '8n', Tone.now());
+                
+                // 2. Acende a luz (adiciona a classe .lit)
+                pad.classList.add('lit');
+
+                // 3. Espera a duração da velocidade
+                setTimeout(() => {
+                    // 4. Apaga a luz (remove a classe .lit)
+                    pad.classList.remove('lit');
+                    resolve();
+                }, speed);
+            });
+        }
+
+        /**
+         * Desabilita ou habilita a interação do jogador com os botões
+         */
+        function setPlayerInteraction(enabled) {
+            if (enabled) {
+                gameBoard.classList.remove('disabled');
+                pads.forEach(pad => pad.classList.remove('disabled'));
+                statusDisplay.textContent = 'Sua vez! Repita a sequência.';
+                gameState = 'player-turn';
+            } else {
+                gameBoard.classList.add('disabled');
+                pads.forEach(pad => pad.classList.add('disabled'));
+                statusDisplay.textContent = 'Observe a sequência...';
+                gameState = 'computer-turn';
+            }
+        }
+
+        /**
+         * Toca a sequência atual do computador
+         */
+        async function playComputerSequence() {
+            setPlayerInteraction(false);
+            
+            // Pequena pausa antes de começar
+            await sleep(700); 
+
+            for (const padIndex of sequence) {
+                await lightUpPad(padIndex);
+                await sleep(getSpeed() * 0.5); // Pausa entre as luzes
+            }
+
+            // Terminou de tocar, agora é a vez do jogador
+            setPlayerInteraction(true);
+        }
+
+        /**
+         * Adiciona um novo passo à sequência e avança o nível
+         */
+        function nextLevel() {
+            level++;
+            playerSequence = [];
+            statusDisplay.textContent = `Nível ${level}`;
+            
+            // Adiciona um novo número aleatório (0 a 3) à sequência
+            const nextPad = Math.floor(Math.random() * 4);
+            sequence.push(nextPad);
+            
+            playComputerSequence();
+        }
+
+        /**
+         * Inicia um novo jogo (chamado pelos botões Iniciar e Jogar Novamente)
+         */
+        async function startGame() {
+            // O Áudio Web (Tone.js) DEVE ser iniciado por uma ação do usuário (clique)
+            try {
+                await Tone.start();
+                console.log('Contexto de áudio iniciado.');
+            } catch (e) {
+                console.error('Contexto de áudio (Tone.js) falhou ao iniciar:', e);
+                // O jogo continua mesmo se o áudio falhar, mas ficará mudo.
+            }
+
+            // Reseta o estado do jogo
+            level = 0;
+            sequence = [];
+            gameState = 'idle';
+            
+            // Esconde o overlay de fim de jogo
+            gameOverOverlay.classList.add('hidden');
+            gameOverOverlay.classList.remove('flex', 'flex-col');
+            
+            nextLevel();
+        }
+
+        /**
+         * Encerra o jogo e mostra a pontuação
+         */
+        function triggerGameOver() {
+            gameState = 'game-over';
+            
+            // Toca a nota de falha
+            synth.triggerAttackRelease(failNote, '4n', Tone.now());
+
+            // Mostra a mensagem e o overlay
+            gameOverMessage.textContent = `Você chegou ao nível ${level}.`;
+            gameOverOverlay.classList.remove('hidden');
+            gameOverOverlay.classList.add('flex', 'flex-col');
+            
+            setPlayerInteraction(false); // Desabilita os botões
+        }
+
+        /**
+         * Compara a entrada do jogador com a sequência do computador
+         */
+        function checkPlayerInput() {
+            const currentStepIndex = playerSequence.length - 1;
+
+            // 1. O jogador acertou o passo atual?
+            if (playerSequence[currentStepIndex] !== sequence[currentStepIndex]) {
+                triggerGameOver();
+                return;
+            }
+
+            // 2. O jogador completou a sequência inteira?
+            if (playerSequence.length === sequence.length) {
+                statusDisplay.textContent = 'Correto! Próximo nível...';
+                setPlayerInteraction(false); // Desabilita cliques enquanto espera
+                
+                // Espera 1 segundo e vai para o próximo nível
+                setTimeout(nextLevel, 1000);
+            }
+            
+            // (Se nenhuma das condições acima for atendida, o jogo apenas espera o próximo clique do jogador)
+        }
+
+        /**
+         * Manipulador de clique para os botões do jogo
+         */
+        function handlePadClick(event) {
+            // Só faz algo se for a vez do jogador
+            if (gameState !== 'player-turn') return;
+            
+            // Ignora cliques no "gap" (espaçamento)
+            if (!event.target.classList.contains('pad')) return; 
+
+            const padIndex = parseInt(event.target.dataset.pad);
+            
+            // Luz e som imediatos para o feedback do jogador
+            lightUpPad(padIndex);
+            
+            // Registra o clique
+            playerSequence.push(padIndex);
+            
+            // Verifica se o clique está correto
+            checkPlayerInput();
+        }
+
+        // --- 5. Adiciona os Event Listeners ---
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        gameBoard.addEventListener('click', handlePadClick);
+
+    </script>
+</body>
+</html>
