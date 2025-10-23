@@ -8,10 +8,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000080">
     <title>Letras Mágicas</title>
-    <!-- Importa a fonte 'Inter' para um visual moderno -->
+    <!-- Importa a fonte 'Fredoka' para um visual mais lúdico -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Importa a biblioteca Tone.js para gerar sons no navegador -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -31,8 +31,8 @@
 
         /* Área do Jogo (o corpo inteiro) */
         body {
-            /* Fundo azul marinho */
-            background-color: #000080;
+            /* Fundo gradiente infantil */
+            background: linear-gradient(135deg, #87CEEB 0%, #FFB6C1 50%, #FFD700 100%);
             
             /* Centraliza o título no topo */
             display: flex;
@@ -46,14 +46,15 @@
             overflow: hidden;
             /* Impede o scroll e o zoom por toque, comum em bebês */
             touch-action: none;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Fredoka', sans-serif;
         }
         
         /* Título de instrução */
         h1 {
-            color: #FF69B4; /* Rosa choque */
-            font-size: 1.5rem; /* Menor para mobile */
-            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
+            color: #FF1493; /* Rosa profundo */
+            font-size: 1.8rem; /* Um pouco maior */
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 20, 147, 0.5);
+            font-weight: 700;
             
             /* Evita que o texto seja selecionado ao tocar */
             user-select: none;
@@ -76,7 +77,7 @@
             pointer-events: none;
 
             /* Adiciona uma sombra leve ao texto para destacar */
-            text-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.3), 2px 2px 4px rgba(255, 255, 255, 0.5);
         }
 
         /* Animação do Item */
@@ -96,7 +97,7 @@
 </head>
 <body>
 
-    <h1>Toque na tela!</h1>
+    <h1>Toque e Magia Aparece! 🌟✨</h1>
 
     <script>
         // --- Configuração do Jogo ---
@@ -112,7 +113,7 @@
         let audioStarted = false;
 
         // 2. Configuração de Cores
-        // Paleta de cores vibrantes e amigáveis
+        // Paleta de cores vibrantes e amigáveis para crianças
         const colors = [
             '#FF6B6B', // Vermelho
             '#4ECDC4', // Verde-água
@@ -120,14 +121,21 @@
             '#FED766', // Amarelo
             '#F0E68C', // Amarelo claro
             '#98D8C8', // Verde claro
-            '#F7B7A3'  // Laranja claro
+            '#F7B7A3', // Laranja claro
+            '#DDA0DD', // Ameixa
+            '#FFB6C1', // Rosa claro
+            '#87CEEB'  // Azul céu
         ];
 
         // 3. Configuração de Itens (Letras e Emojis)
         const items = [
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
             'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-            '🌟', '🍎', '🐶', '🚗', '👶', '🎈', '☀', '🌙', '❤', '🎵'
+            '🌟', '🍎', '🐶', '🚗', '👶', '🎈', '☀', '🌙', '❤', '🎵',
+            '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁',
+            '🐸', '🐵', '🙈', '🙉', '🙊', '🐧', '🐦', '🐤', '🐣', '🐥',
+            '🍓', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑',
+            '🎀', '🎁', '🎉', '🎊', '🎈', '🎆', '🎇', '✨', '💫', '🌈'
         ];
 
 
@@ -181,8 +189,8 @@
             // Define a cor do item
             item.style.color = getRandomColor();
             
-            // Tamanho aleatório entre 40px e 100px
-            const size = Math.random() * 60 + 40;
+            // Tamanho aleatório entre 50px e 120px para mais impacto
+            const size = Math.random() * 70 + 50;
             item.style.fontSize = `${size}px`;
             item.style.fontWeight = 'bold'; // Deixa a letra mais cheia
 
