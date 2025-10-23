@@ -1,33 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-pt" class="dark">
 <head>
-    <meta charset="UTF-8"> <!-- Corrigido! -->
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <title>Corredor Cósmico</title>
+    <title>Cosmic Handheld</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Fonte Pixelada Retro --><link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
     <style>
         /* Estilo base */
-        body {
-            font-family: 'Inter', sans-serif;
-            /* Evita o "puxar para atualizar" ou saltos no telemóvel */
+        html, body {
+            background-color: #1a1a1a; /* Fundo mais escuro */
+            font-family: 'Press Start 2P', cursive; /* Fonte retro! */
             overscroll-behavior: none;
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
+            /* Evita a seleção de texto nos botões */
+            user-select: none;
+            -webkit-user-select: none;
         }
         
-        /* Safe area para notch de iPhone */
+        /* Safe area para notch */
         @supports(padding: max(0px)) {
             body {
                 padding-top: env(safe-area-inset-top);
@@ -37,143 +41,226 @@
             }
         }
         
+        /* O CORPO DA CONSOLA */
+        #console-body {
+            background-color: #dc2626; /* Vermelho Retro */
+            border: 4px solid #450a0a; /* Borda vermelha escura */
+            border-radius: 20px;
+            padding: 6px; /* REDUZIDO de 12px para espremer mais as laterais */
+            width: 100%;
+            max-width: 420px; /* REDUZIDO de 540px para um formato de telemóvel mais real */
+            aspect-ratio: 9 / 16; /* FORMATO VERTICAL DE TELEMÓVEL */
+            max-height: 95vh;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.5); /* Sombra dura */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* O "ECRÃ" ONDE O JOGO ACONTECE */
+        #screen-area {
+            background-color: #0f0f0f; /* Preto */
+            border: 4px inset #000;
+            border-radius: 10px;
+            padding: 4px; /* REDUZIDO de 6px */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: 1;
+        }
+
         /* Estilo da tela do jogo */
         canvas {
             background-color: #000;
-            /* Fundo de "espaço" subtil */
-            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.2) 1px, transparent 0);
-            background-size: 25px 25px;
             display: block;
-            width: 100%; /* <-- A CORREÇÃO ESTÁ AQUI */
-            touch-action: none; /* Desativa o scroll no telemóvel */
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
 
-        /* Estilo do botão de jogo (Recomeçar) */
-        .game-button {
-            background-image: linear-gradient(to right, #4f46e5, #7c3aed);
-            box-shadow: 0 4px 15px 0 rgba(79, 70, 229, 0.75);
-            transition: all 0.3s ease-in-out;
-        }
-        .game-button:hover {
-            background-position: right center;
-            box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.8);
-            transform: translateY(-2px);
-        }
-        
-        /* Efeito de "brilho" néon para o texto */
-        .neon-text {
-            text-shadow:
-                0 0 5px #fff,
-                0 0 10px #fff,
-                0 0 15px #6366f1,
-                0 0 20px #6366f1,
-                0 0 25px #6366f1,
-                0 0 30px #6366f1,
-                0 0 35px #6366f1;
-        }
-
-        /* Painel de "Fim de Jogo" */
+        /* Painel de "Fim de Jogo" (Retro) */
         #gameOverScreen {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.9);
+            font-size: 10px;
+        }
+        #gameOverScreen h2 {
+            font-size: 24px;
+            color: #ef4444;
+        }
+        #gameOverScreen p {
+            font-size: 10px;
+            color: #fff;
         }
 
-        /* Estilos para os botões de controlo (A e B) */
-        .control-button {
-            min-height: 60px; /* Altura mínima maior */
-            background-color: rgba(79, 70, 229, 0.7); /* Cor base indigo semi-transparente */
-            border: 2px solid #6366f1; /* Borda indigo */
-            border-radius: 12px;
-            font-size: 1.25rem; /* 20px */
-            font-weight: bold;
+        /* Botão de recomeçar (Retro) */
+        .game-button {
+            background-color: #4f46e5;
             color: white;
-            user-select: none; /* Impede a seleção de texto */
-            -webkit-user-select: none; /* Safari */
-            -webkit-tap-highlight-color: transparent; /* ADICIONADO - remove brilho no toque */
-            transition: all 0.1s ease-in-out;
+            border: 2px solid #1f1f1f;
+            padding: 8px 16px;
+            font-size: 10px;
+            border-radius: 4px;
+        }
+        .game-button:active {
+            background-color: #3730a3;
+            transform: translateY(1px);
+        }
+
+        /* Botões de controlo genéricos */
+        .control-button {
+            background-color: #1f1f1f;
+            border: 2px solid #000;
+            border-radius: 50%;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
         }
         .control-button:active {
-            background-color: rgba(124, 58, 237, 0.9); /* Roxo quando pressionado */
-            transform: scale(0.95);
+            background-color: #4a4a4a;
         }
 
-        /* Estilo para o botão de ATIRAR (C) */
-        .control-button-shoot {
-            width: 80px; 
-            height: 80px;
-            background-color: rgba(220, 38, 38, 0.7); /* Vermelho */
-            border: 2px solid #ef4444; /* Borda vermelha */
-            border-radius: 50%; /* Círculo */
-            font-size: 1.5rem; /* 24px */
-            font-weight: bold;
-            color: white;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent; /* ADICIONADO - remove brilho no toque */
-            transition: all 0.1s ease-in-out;
+        /* D-Pad (Botão em Cruz) */
+        .d-pad {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 4px;
+        }
+        #upButton { grid-area: up; border-radius: 8px 8px 0 0; }
+        #leftButton { grid-area: left; border-radius: 8px 0 0 8px; }
+        #rightButton { grid-area: right; border-radius: 0 8px 8px 0; }
+        #downButton { grid-area: down; border-radius: 0 0 8px 8px; }
+        
+        .d-pad .control-button {
+            width: 38px; /* REDUZIDO de 40px */
+            height: 38px; /* REDUZIDO de 40px */
+            border-radius: 4px;
+        }
+
+        /* Botão de Ação "A" (único) */
+        #shootButton {
+            width: 48px; /* REDUZIDO de 50px */
+            height: 48px; /* REDUZIDO de 50px */
+            font-size: 18px; /* REDUZIDO de 20px */
+            border-radius: 50%;
+            margin-right: 8px; /* REDUZIDO de 10px */
+        }
+
+
+        /* Botões Start/Select */
+        .start-select {
+            gap: 8px;
+            margin-bottom: 10px;
             display: flex;
-            align-items: center;
             justify-content: center;
         }
-        .control-button-shoot:active {
-            background-color: rgba(239, 68, 68, 0.9); /* Vermelho mais forte */
-            transform: scale(0.95);
+        .start-select button {
+            background-color: #3f3f3f;
+            border: 2px solid #1f1f1f;
+            color: #a1a1a1;
+            font-size: 6px;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-family: 'Press Start 2P', cursive;
         }
+
+        /* Ajustes para o cabeçalho e pontuação */
+        .score-display {
+            font-size: 7px;
+            margin-bottom: 4px;
+            padding: 0 2px;
+        }
+        #console-body > h1 {
+            font-size: 10px !important;
+            margin-bottom: 4px !important;
+        }
+        #console-body .text-3xl {
+            font-size: 24px !important;
+            margin-bottom: 12px;
+        }
+        /* Layout dos controlos */
+        #controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            padding: 0 6px; /* REDUZIDO de 0 8px */
+        }
+
     </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+<body class="flex flex-col items-center justify-center p-4">
 
-    <div class="w-full h-full flex flex-col items-center justify-between p-2 bg-gray-900 text-white">
-        
-        <h1 class="text-2xl font-black mb-1 neon-text">Corredor Cósmico</h1>
-        
-        <div class="flex justify-between text-lg font-bold mb-2 px-2 w-full">
-            <div>
-                <span>Pontuação: </span>
-                <span id="scoreEl">0</span>
+    <!-- O CORPO DA CONSOLA --><div id="console-body">
+    
+        <!-- Área do Ecrã --><div id="screen-area" class="mb-2"> <!-- Título e Pontuação (Acima do Ecrã) --><h1 class="text-lg font-bold text-center text-gray-300 mb-2" style="font-size: 10px;">COSMIC</h1>
+            
+            <div class="flex justify-between text-xs text-gray-400 score-display">
+                <div>
+                    <span>SCORE: </span>
+                    <span id="scoreEl">0</span>
+                </div>
+                <div>
+                    <span>HI: </span>
+                    <span id="highScoreEl">0</span>
+                </div>
             </div>
-            <div>
-                <span>Recorde: </span>
-                <span id="highScoreEl">0</span>
+
+            <!-- O Ecrã do Jogo --><div class="relative flex-1 w-full h-full overflow-hidden">
+                <canvas id="gameCanvas"></canvas>
+                
+                <div id="gameOverScreen" class="absolute inset-0 flex-col items-center justify-center hidden p-4 text-center">
+                    <h2 class="mb-4">GAME OVER</h2>
+                    <p class="mb-6">SCORE: <span id="finalScoreEl">0</span></p>
+                    <button id="restartButton" class="game-button">
+                        RESTART
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Área dos Controlos --><div class="flex flex-col items-center">
+        
+            <!-- Nome da Consola (Decorativo) --><div class="text-center text-white text-3xl font-bold" style="text-shadow: 2px 2px #450a0a; font-size: 24px;">SUPER
+            </div>
+
+            <!-- Botões Start/Select (Centro) --><div class="flex justify-center start-select">
+                <button>SELECT</button>
+                <button>START</button>
+            </div>
+            
+            <!-- Linha de D-Pad e Botão A --><div id="controls-row">
+                
+                <!-- D-Pad (Esquerda) --><div class="d-pad">
+                    <button id="upButton" class="control-button">↑</button>
+                    <button id="leftButton" class="control-button">←</button>
+                    <button id="rightButton" class="control-button">→</button>
+                    <button id="downButton" class="control-button">↓</button>
+                </div>
+                
+                <!-- Botão de Ação "A" (Direita) --><button id="shootButton" class="control-button">A</button>
+
             </div>
         </div>
 
-        <div class="relative flex-1 w-full rounded-lg overflow-hidden shadow-2xl border-2 border-indigo-500 bg-black">
-            <canvas id="gameCanvas"></canvas>
-            
-            <div id="gameOverScreen" class="absolute inset-0 flex-col items-center justify-center hidden">
-                <h2 class="text-5xl font-black text-white neon-text mb-4">Fim de Jogo!</h2>
-                <p class="text-xl text-gray-200 mb-6">A tua pontuação: <span id="finalScoreEl">0</span></p>
-                <button id="restartButton" class="game-button text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg">
-                    Recomeçar
-                </button>
-            </div>
-        </div>
-        
-        <!-- Instruções Atualizadas -->
-        <p class="text-sm text-gray-400 text-center mb-2">
-            Use (← →), (a) (b), ou deslize. Atire com (c) ou [ESPAÇO].
-        </p>
-        
-        <!-- Novos Botões de Controlo (Layout Atualizado) -->
-        <div class="flex justify-between items-center w-full gap-2 p-2">
-            <!-- Botões de Movimento (Esquerda) -->
-            <button id="leftButton" class="control-button flex-1">← A</button>
-            <button id="rightButton" class="control-button flex-1">B →</button>
-            
-            <!-- Botão de Tiro (Direita) -->
-            <button id="shootButton" class="control-button-shoot">🚀 C</button>
-        </div>
     </div>
 
     <script>
         // --- Configuração do Jogo ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // Desativa o suavizador de imagem para um look pixelado
+        ctx.imageSmoothingEnabled = false;
 
         const scoreEl = document.getElementById('scoreEl');
         const highScoreEl = document.getElementById('highScoreEl');
@@ -181,16 +268,53 @@
         const finalScoreEl = document.getElementById('finalScoreEl');
         const restartButton = document.getElementById('restartButton');
         
-        const gameWidth = 400;
-        const gameHeight = 600;
+        // Resolução interna do jogo (baixa, para ser pixelado)
+        const gameWidth = 240;
+        const gameHeight = 320;
         canvas.width = gameWidth;
         canvas.height = gameHeight;
 
         // --- Variáveis do Jogo ---
-        let player, obstacles, projectiles, particles;
+        let player, obstacles, projectiles, particles, stars;
         let score, highScore, gameOver, animationId;
         let obstacleSpeed, spawnRate, shootCooldown;
-        let frameCount = 0; // Contador de frames
+        let frameCount = 0;
+
+        // --- Estrelas (Fundo) ---
+        class Star {
+            constructor() {
+                this.x = Math.random() * gameWidth;
+                this.y = Math.random() * gameHeight;
+                this.size = Math.random() > 0.9 ? 2 : 1; // 1x1 ou 2x2
+                this.speed = this.size > 1 ? 0.5 : 0.2; // Estrelas maiores movem-se mais rápido
+                this.color = "#555"; // Cinza
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > gameHeight) {
+                    this.y = 0;
+                    this.x = Math.random() * gameWidth;
+                }
+            }
+        }
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < 40; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        function drawStars() {
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+        }
 
         // --- Nave do Jogador ---
         class Player {
@@ -200,41 +324,56 @@
                 this.width = width;
                 this.height = height;
                 this.color = color;
-                this.speed = 10;
+                this.speed = 4; // Velocidade reduzida para o estilo retro
             }
             
             draw() {
                 ctx.fillStyle = this.color;
-                // Desenha um triângulo (nave)
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width / 2, this.y); // Ponta de cima
-                ctx.lineTo(this.x, this.y + this.height); // Canto inferior esquerdo
-                ctx.lineTo(this.x + this.width, this.y + this.height); // Canto inferior direito
-                ctx.closePath();
-                ctx.fill();
+                // Desenha uma nave pixelada simples (Forma de Seta)
+                //      X
+                //     XXX
+                //    XXXXX
+                //   X  X  X
                 
-                // Desenha o "fogo" da nave
-                ctx.fillStyle = '#f97316'; // Laranja
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width / 2, this.y + this.height + 5);
-                ctx.lineTo(this.x + this.width / 2 - 5, this.y + this.height);
-                ctx.lineTo(this.x + this.width / 2 + 5, this.y + this.height);
-                ctx.closePath();
-                ctx.fill();
+                // Ponta
+                ctx.fillRect(this.x + this.width / 2 - 1, this.y, 2, 2);
+                // Meio
+                ctx.fillRect(this.x + this.width / 2 - 3, this.y + 2, 6, 2);
+                // Corpo
+                ctx.fillRect(this.x + this.width / 2 - 5, this.y + 4, 10, 2);
+                // Asas
+                ctx.fillRect(this.x, this.y + 6, 4, 2);
+                ctx.fillRect(this.x + this.width - 4, this.y + 6, 4, 2);
+                // Motor
+                ctx.fillRect(this.x + this.width / 2 - 1, this.y + 6, 2, 2);
+
+                // Fogo do motor (pisca)
+                if (frameCount % 10 < 5) {
+                    ctx.fillStyle = '#f97316'; // Laranja
+                    ctx.fillRect(this.x + this.width / 2 - 1, this.y + 8, 2, 4);
+                }
             }
             
-            update(dx) {
+            update(dx, dy = 0) {
                 this.x += dx * this.speed;
-                // Limites do ecrã
+                this.y += dy * this.speed;
+                // Limites
                 if (this.x < 0) this.x = 0;
-                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+                if (this.x + this.width > gameWidth) this.x = gameWidth - this.width;
+                if (this.y < 0) this.y = 0;
+                if (this.y + this.height > gameHeight) this.y = gameHeight - this.height;
             }
             
             moveTo(x) {
-                this.x = x - this.width / 2;
-                // Limites do ecrã
+                // Converte a posição do toque (relativa ao canvas escalado) para a posição do jogo
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = gameWidth / rect.width;
+                const canvasX = (x - rect.left) * scaleX;
+                
+                this.x = canvasX - this.width / 2;
+                
                 if (this.x < 0) this.x = 0;
-                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+                if (this.x + this.width > gameWidth) this.x = gameWidth - this.width;
             }
         }
 
@@ -243,18 +382,16 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.width = 5;
-                this.height = 15;
-                this.color = '#33ffcc'; // Ciano néon
-                this.speed = 10;
+                this.width = 2; // Fino
+                this.height = 8; // Comprido
+                this.color = '#33ffcc'; // Ciano
+                this.speed = 6;
             }
 
             draw() {
                 ctx.fillStyle = this.color;
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10;
+                // Sem blur, apenas um retângulo
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.shadowBlur = 0; // Resetar o blur
             }
 
             update() {
@@ -267,27 +404,30 @@
             constructor(x, y, color) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 3 + 1;
+                this.size = Math.random() > 0.5 ? 2 : 1; // Píxeis 1x1 ou 2x2
                 this.color = color;
                 this.opacity = 1;
                 this.velocity = {
-                    x: (Math.random() - 0.5) * 5,
-                    y: (Math.random() - 0.5) * 5
+                    x: (Math.random() - 0.5) * 3,
+                    y: (Math.random() - 0.5) * 3
                 };
+                this.life = 20; // Vida curta (20 frames)
             }
 
             draw() {
-                ctx.save();
-                ctx.globalAlpha = this.opacity;
                 ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
                 ctx.fillRect(this.x, this.y, this.size, this.size);
-                ctx.restore();
+                ctx.globalAlpha = 1; // Reset
             }
 
             update() {
                 this.x += this.velocity.x;
                 this.y += this.velocity.y;
-                this.opacity -= 0.02; // Desvanece
+                this.life--;
+                if (this.life < 10) {
+                    this.opacity = this.life / 10; // Desvanece rápido
+                }
             }
         }
 
@@ -303,7 +443,16 @@
             
             draw() {
                 ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
+                // Desenha um "asteroide" pixelado
+                // X X
+                //XXXXX
+                // X X
+                const s = this.size;
+                const s2 = Math.floor(s / 2);
+                const s4 = Math.floor(s / 4);
+                
+                ctx.fillRect(this.x, this.y + s4, s, s2);
+                ctx.fillRect(this.x + s4, this.y, s2, s);
             }
             
             update() {
@@ -314,15 +463,17 @@
         // --- Funções Principais do Jogo ---
         
         function init() {
-            player = new Player(canvas.width / 2 - 15, canvas.height - 50, 30, 30, '#ec4899'); // Rosa néon
+            player = new Player(gameWidth / 2 - 10, gameHeight - 40, 20, 12, '#ec4899'); // Rosa
             obstacles = [];
             projectiles = [];
             particles = [];
+            initStars(); // Inicia as estrelas
+            
             score = 0;
-            highScore = localStorage.getItem('cosmicRunnerHighScore') || 0; 
+            highScore = localStorage.getItem('cosmicHandheldHighScore') || 0; 
             gameOver = false;
-            obstacleSpeed = 3;
-            spawnRate = 100; // a cada 100 frames
+            obstacleSpeed = 1.5; // Mais lento
+            spawnRate = 80; // a cada 80 frames
             shootCooldown = 0;
             frameCount = 0;
             
@@ -336,17 +487,17 @@
         }
 
         function spawnObstacle() {
-            const size = Math.random() * (40 - 15) + 15; // Tamanho entre 15 e 40
-            const x = Math.random() * (canvas.width - size);
+            const size = Math.floor(Math.random() * (25 - 10) + 10); // Tamanho entre 10 e 25
+            const x = Math.random() * (gameWidth - size);
             const y = -size; 
-            const speed = Math.random() * (obstacleSpeed - (obstacleSpeed - 1.5)) + (obstacleSpeed - 1.5);
-            const color = `hsl(${Math.random() * 60 + 190}, 100%, 70%)`; // Tons de azul/ciano/roxo
+            const speed = Math.random() * (obstacleSpeed - (obstacleSpeed - 0.5)) + (obstacleSpeed - 0.5);
+            const color = `hsl(${Math.random() * 60 + 190}, 100%, 70%)`; // Tons de azul/ciano
             
             obstacles.push(new Obstacle(x, y, size, speed, color));
         }
 
         function createExplosion(obstacle) {
-            for (let i = 0; i < 20; i++) { // Cria 20 partículas
+            for (let i = 0; i < 15; i++) { // 15 partículas
                 particles.push(new Particle(
                     obstacle.x + obstacle.size / 2, 
                     obstacle.y + obstacle.size / 2, 
@@ -356,7 +507,6 @@
         }
 
         function checkCollision(rect1, rect2) {
-            // AABB - Axis-Aligned Bounding Box (para o jogador)
             return (
                 rect1.x < rect2.x + rect2.size &&
                 rect1.x + rect1.width > rect2.x &&
@@ -365,10 +515,9 @@
             );
         }
 
-        // Função para atirar
         function fireProjectile() {
-            projectiles.push(new Projectile(player.x + player.width / 2 - 2.5, player.y));
-            shootCooldown = 15; // 15 frames de cooldown
+            projectiles.push(new Projectile(player.x + player.width / 2 - 1, player.y));
+            shootCooldown = 20; // 20 frames de cooldown (mais lento)
         }
 
         function endGame() {
@@ -377,7 +526,7 @@
             
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('cosmicRunnerHighScore', highScore);
+                localStorage.setItem('cosmicHandheldHighScore', highScore);
                 highScoreEl.innerText = highScore;
             }
             
@@ -391,10 +540,14 @@
             if (gameOver) return;
             
             animationId = requestAnimationFrame(animate);
-            // Limpa o ecrã com rasto
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
+            // Limpa o ecrã a preto (SEM RASTO/BLUR)
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, gameWidth, gameHeight);
+            
+            // Desenha as estrelas
+            drawStars();
+
             player.draw();
 
             // Atualiza Partículas
@@ -402,7 +555,7 @@
                 const p = particles[i];
                 p.update();
                 p.draw();
-                if (p.opacity <= 0) particles.splice(i, 1);
+                if (p.life <= 0) particles.splice(i, 1);
             }
             
             // Atualiza Projéteis
@@ -426,9 +579,9 @@
                 
                 // 1. Colisão com o JOGADOR
                 if (checkCollision(player, obstacle)) {
-                    createExplosion(obstacle); 
+                    createExplosion(player); // Explosão no jogador
                     endGame();
-                    return; // Para a frame
+                    return; 
                 }
 
                 // 2. Colisão com PROJÉTEIS
@@ -444,44 +597,42 @@
                         createExplosion(obstacle);
                         projectiles.splice(j, 1);
                         obstacles.splice(i, 1);
-                        score += 10; // +10 pontos por destruir
+                        score += 10; 
                         scoreEl.innerText = score;
                         hit = true;
                         break; 
                     }
                 }
 
-                if (hit) continue; // Obstáculo destruído, passa ao próximo
+                if (hit) continue;
                 
                 // 3. Obstáculo saiu do ecrã
-                if (obstacle.y > canvas.height) {
+                if (obstacle.y > gameHeight) {
                     obstacles.splice(i, 1);
-                    score++; // +1 ponto por desviar
+                    score++; 
                     scoreEl.innerText = score;
                 }
             }
             
             // Controlo do Jogador
-            if (keys.ArrowLeft.pressed || keys.a.pressed) {
-                player.update(-1);
-            }
-            if (keys.ArrowRight.pressed || keys.b.pressed) {
-                player.update(1);
-            }
+            if (keys.ArrowLeft.pressed) player.update(-1, 0);
+            if (keys.ArrowRight.pressed) player.update(1, 0);
+            if (keys.ArrowUp.pressed) player.update(0, -1);
+            if (keys.ArrowDown.pressed) player.update(0, 1);
 
             // Controlo de Tiro
             if (shootCooldown > 0) {
                 shootCooldown--;
             }
-            if ((keys.c.pressed || keys[' '].pressed) && shootCooldown === 0 && !gameOver) {
+            if ((keys.a.pressed || keys[' '].pressed) && shootCooldown === 0 && !gameOver) {
                 fireProjectile();
             }
             
             // Aumenta Dificuldade
-            const currentDifficultyLevel = Math.floor(score / 50); // A cada 50 pontos
-            obstacleSpeed = 3 + currentDifficultyLevel * 0.4;
-            const newSpawnRate = 100 - currentDifficultyLevel * 5;
-            spawnRate = Math.max(30, newSpawnRate); // Limite mínimo de 30 frames
+            const currentDifficultyLevel = Math.floor(score / 50);
+            obstacleSpeed = 1.5 + currentDifficultyLevel * 0.2;
+            const newSpawnRate = 80 - currentDifficultyLevel * 4;
+            spawnRate = Math.max(20, newSpawnRate); // Limite
 
             frameCount++;
         }
@@ -492,80 +643,76 @@
         const keys = {
             ArrowLeft: { pressed: false },
             ArrowRight: { pressed: false },
-            a: { pressed: false },
-            b: { pressed: false },
-            c: { pressed: false }, // NOVO
-            ' ': { pressed: false }  // NOVO (para Espaço)
+            ArrowUp: { pressed: false },
+            ArrowDown: { pressed: false },
+            a: { pressed: false }, // 'A' é agora o tiro
+            ' ': { pressed: false }
         };
 
         window.addEventListener('keydown', (e) => {
-            if (gameOver && e.key === ' ') { // Permite recomeçar com Espaço
+            if (gameOver && (e.key === ' ' || e.key.toLowerCase() === 'a')) {
                 init();
                 return;
             }
             if (gameOver) return;
             
             const key = e.key.toLowerCase();
-            if (key === 'arrowleft' || key === 'a') { keys.ArrowLeft.pressed = true; keys.a.pressed = true; }
-            if (key === 'arrowright' || key === 'b') { keys.ArrowRight.pressed = true; keys.b.pressed = true; }
-            if (key === 'c') keys.c.pressed = true;
-            if (key === ' ') { keys[' '].pressed = true; e.preventDefault(); } // e.preventDefault() para não fazer scroll
+            if (key === 'arrowleft') keys.ArrowLeft.pressed = true;
+            if (key === 'arrowright') keys.ArrowRight.pressed = true;
+            if (key === 'arrowup') keys.ArrowUp.pressed = true;
+            if (key === 'arrowdown') keys.ArrowDown.pressed = true;
+            
+            if (key === 'a') keys.a.pressed = true;
+            if (key === ' ') { keys[' '].pressed = true; e.preventDefault(); }
         });
 
         window.addEventListener('keyup', (e) => {
             const key = e.key.toLowerCase();
-            if (key === 'arrowleft' || key === 'a') { keys.ArrowLeft.pressed = false; keys.a.pressed = false; }
-            if (key === 'arrowright' || key === 'b') { keys.ArrowRight.pressed = false; keys.b.pressed = false; }
-            if (key === 'c') keys.c.pressed = false;
+            if (key === 'arrowleft') keys.ArrowLeft.pressed = false;
+            if (key === 'arrowright') keys.ArrowRight.pressed = false;
+            if (key === 'arrowup') keys.ArrowUp.pressed = false;
+            if (key === 'arrowdown') keys.ArrowDown.pressed = false;
+
+            if (key === 'a') keys.a.pressed = false;
             if (key === ' ') keys[' '].pressed = false;
         });
         
-        // Tátil (Canvas)
-        function getTouchPos(canvasDom, touchEvent) {
-            const rect = canvasDom.getBoundingClientRect();
-            return { x: touchEvent.touches[0].clientX - rect.left };
-        }
+        // Tátil (Canvas) - Movimento
         canvas.addEventListener('touchstart', (e) => {
             if (gameOver) return;
             e.preventDefault(); 
-            player.moveTo(getTouchPos(canvas, e).x);
+            player.moveTo(e.touches[0].clientX);
         }, { passive: false });
+        
         canvas.addEventListener('touchmove', (e) => {
             if (gameOver) return;
             e.preventDefault(); 
-            player.moveTo(getTouchPos(canvas, e).x);
+            player.moveTo(e.touches[0].clientX);
         }, { passive: false });
         
         // Controlores dos botões no ecrã
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
-        const shootButton = document.getElementById('shootButton'); // NOVO
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+        const shootButton = document.getElementById('shootButton'); // Botão "A"
 
         const preventContextMenu = (e) => e.preventDefault();
 
-        // Botão ESQUERDO (a)
-        leftButton.addEventListener('mousedown', (e) => { keys.a.pressed = true; e.preventDefault(); });
-        leftButton.addEventListener('mouseup', (e) => { keys.a.pressed = false; e.preventDefault(); });
-        leftButton.addEventListener('mouseleave', (e) => { keys.a.pressed = false; e.preventDefault(); });
-        leftButton.addEventListener('touchstart', (e) => { keys.a.pressed = true; e.preventDefault(); }, { passive: false });
-        leftButton.addEventListener('touchend', (e) => { keys.a.pressed = false; e.preventDefault(); }, { passive: false });
-        leftButton.addEventListener('contextmenu', preventContextMenu);
+        function setupButton(button, key) {
+            button.addEventListener('mousedown', (e) => { keys[key].pressed = true; e.preventDefault(); });
+            button.addEventListener('mouseup', (e) => { keys[key].pressed = false; e.preventDefault(); });
+            button.addEventListener('mouseleave', (e) => { keys[key].pressed = false; e.preventDefault(); });
+            button.addEventListener('touchstart', (e) => { keys[key].pressed = true; e.preventDefault(); }, { passive: false });
+            button.addEventListener('touchend', (e) => { keys[key].pressed = false; e.preventDefault(); }, { passive: false });
+            button.addEventListener('contextmenu', preventContextMenu);
+        }
 
-        // Botão DIREITO (b)
-        rightButton.addEventListener('mousedown', (e) => { keys.b.pressed = true; e.preventDefault(); });
-        rightButton.addEventListener('mouseup', (e) => { keys.b.pressed = false; e.preventDefault(); });
-        rightButton.addEventListener('mouseleave', (e) => { keys.b.pressed = false; e.preventDefault(); });
-        rightButton.addEventListener('touchstart', (e) => { keys.b.pressed = true; e.preventDefault(); }, { passive: false });
-        rightButton.addEventListener('touchend', (e) => { keys.b.pressed = false; e.preventDefault(); }, { passive: false });
-        rightButton.addEventListener('contextmenu', preventContextMenu);
-        
-        // Botão ATIRAR (c) - NOVO
-        shootButton.addEventListener('mousedown', (e) => { keys.c.pressed = true; e.preventDefault(); });
-        shootButton.addEventListener('mouseup', (e) => { keys.c.pressed = false; e.preventDefault(); });
-        shootButton.addEventListener('mouseleave', (e) => { keys.c.pressed = false; e.preventDefault(); });
-        shootButton.addEventListener('touchstart', (e) => { keys.c.pressed = true; e.preventDefault(); }, { passive: false });
-        shootButton.addEventListener('touchend', (e) => { keys.c.pressed = false; e.preventDefault(); }, { passive: false });
-        shootButton.addEventListener('contextmenu', preventContextMenu);
+        setupButton(leftButton, 'ArrowLeft');
+        setupButton(rightButton, 'ArrowRight');
+        setupButton(upButton, 'ArrowUp');
+        setupButton(downButton, 'ArrowDown');
+        setupButton(shootButton, 'a'); // Botão "A" ativa a tecla 'a'
         
         // Botão de recomeçar
         restartButton.addEventListener('click', () => {
