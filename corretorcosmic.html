@@ -134,6 +134,7 @@
                 "left . right"
                 ". down .";
             gap: 4px;
+            margin-top: -20px;
         }
         #upButton { grid-area: up; border-radius: 8px 8px 0 0; }
         #leftButton { grid-area: left; border-radius: 8px 0 0 8px; }
@@ -191,7 +192,7 @@
         #controls-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: flex-start;
             width: 100%;
             padding: 0 6px; /* REDUZIDO de 0 8px */
         }
@@ -247,7 +248,9 @@
                     <button id="downButton" class="control-button">↓</button>
                 </div>
                 
-                <!-- Botão de Ação "A" (Direita) --><button id="shootButton" class="control-button">A</button>
+                <!-- Botão de Ação "A" (Direita) --><div style="align-self: flex-start;">
+                    <button id="shootButton" class="control-button">A</button>
+                </div>
 
             </div>
         </div>
