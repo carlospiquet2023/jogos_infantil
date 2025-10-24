@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-pt" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>Snake Game</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonte Pixelada Retro --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilo base */
+        html, body {
+            background-color: #1a1a1a; /* Fundo mais escuro */
+            font-family: 'Press Start 2P', cursive; /* Fonte retro! */
+            overscroll-behavior: none;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            /* Evita a seleção de texto nos botões */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* Safe area para notch */
+        @supports(padding: max(0px)) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+        }
+        
+        /* O CORPO DA CONSOLA */
+        #console-body {
+            background-color: #dc2626; /* Vermelho Retro */
+            border: 4px solid #450a0a; /* Borda vermelha escura */
+            border-radius: 20px;
+            padding: 6px; /* REDUZIDO de 12px para espremer mais as laterais */
+            width: 100%;
+            max-width: 420px; /* REDUZIDO de 540px para um formato de telemóvel mais real */
+            aspect-ratio: 9 / 16; /* FORMATO VERTICAL DE TELEMÓVEL */
+            max-height: 95vh;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.5); /* Sombra dura */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-top: 0px; /* Levantado para encostar no teto */
+        }
+
+        /* O "ECRÃ" ONDE O JOGO ACONTECE */
+        #screen-area {
+            background-color: #0f0f0f; /* Preto */
+            border: 4px inset #000;
+            border-radius: 10px;
+            padding: 4px; /* REDUZIDO de 6px */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        /* Estilo da tela do jogo */
+        canvas {
+            background-color: #000;
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        /* Painel de "Fim de Jogo" (Retro) */
+        #gameOverScreen {
+            background-color: rgba(0, 0, 0, 0.9);
+            font-size: 10px;
+        }
+        #gameOverScreen h2 {
+            font-size: 24px;
+            color: #ef4444;
+        }
+        #gameOverScreen p {
+            font-size: 10px;
+            color: #fff;
+        }
+
+        /* Botão de recomeçar (Retro) */
+        .game-button {
+            background-color: #4f46e5;
+            color: white;
+            border: 2px solid #1f1f1f;
+            padding: 8px 16px;
+            font-size: 10px;
+            border-radius: 4px;
+        }
+        .game-button:active {
+            background-color: #3730a3;
+            transform: translateY(1px);
+        }
+
+        /* Botões de controlo genéricos */
+        .control-button {
+            background-color: #1f1f1f;
+            border: 2px solid #000;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .control-button:active {
+            background-color: #4a4a4a;
+        }
+
+        /* D-Pad (Botão em Cruz) */
+        .d-pad {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 20px; /* Aumentado para afastar os botões */
+            position: relative;
+            top: -20px; /* Reduzido para evitar sobreposição */
+        }
+        #upButton { grid-area: up; border-radius: 8px 8px 0 0; }
+        #leftButton { grid-area: left; border-radius: 8px 0 0 8px; }
+        #rightButton { grid-area: right; border-radius: 0 8px 8px 0; }
+        #downButton { grid-area: down; border-radius: 0 0 8px 8px; }
+        
+        .d-pad .control-button {
+            width: 42px; /* Aumentado para mobile */
+            height: 42px; /* Aumentado para mobile */
+            border-radius: 4px;
+        }
+
+        /* Botão de Ação "A" (único) */
+        #shootButton {
+            width: 48px; /* REDUZIDO de 50px */
+            height: 48px; /* REDUZIDO de 50px */
+            font-size: 18px; /* REDUZIDO de 20px */
+            border-radius: 50%;
+            margin-right: 8px; /* REDUZIDO de 10px */
+        }
+
+
+        /* Botões Start/Select */
+        .start-select {
+            gap: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            position: relative; /* Para posicionamento absoluto dos botões */
+            width: 100%;
+            height: 20px; /* Altura para os botões */
+        }
+        #restartBtn {
+            position: absolute;
+            left: 10px;
+        }
+        #startBtn {
+            position: absolute;
+            right: 10px;
+        }
+        .start-select button {
+            background-color: #3f3f3f;
+            border: 2px solid #1f1f1f;
+            color: #a1a1a1;
+            font-size: 6px;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Ajustes para o cabeçalho e pontuação */
+        .score-display {
+            font-size: 7px;
+            margin-bottom: 4px;
+            padding: 0 2px;
+        }
+        #console-body > h1 {
+            font-size: 10px !important;
+            margin-bottom: 4px !important;
+        }
+        #console-body .text-3xl {
+            font-size: 24px !important;
+            margin-bottom: 12px;
+        }
+        /* Layout dos controlos */
+        #controls-row {
+            display: flex;
+            justify-content: center; /* Centralizado */
+            align-items: flex-start;
+            width: 100%;
+            padding: 0 6px; /* REDUZIDO de 0 8px */
+        }
+
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4">
+
+    <!-- O CORPO DA CONSOLA --><div id="console-body">
+    
+        <!-- Área do Ecrã --><div id="screen-area" class="mb-2"> <!-- Título e Pontuação (Acima do Ecrã) -->            <h1 class="text-lg font-bold text-center text-gray-300 mb-2" style="font-size: 10px;">MINHOCA</h1>
+            
+            <div class="flex justify-between text-xs text-gray-400 score-display">
+                <div>
+                    <span>SCORE: </span>
+                    <span id="scoreEl">0</span>
+                </div>
+                <div>
+                    <span>HI: </span>
+                    <span id="highScoreEl">0</span>
+                </div>
+            </div>
+
+            <!-- O Ecrã do Jogo --><div class="relative flex-1 w-full h-full overflow-hidden">
+                <canvas id="gameCanvas"></canvas>
+                
+                <div id="gameOverScreen" class="absolute inset-0 flex-col items-center justify-center hidden p-4 text-center">
+                    <h2 class="mb-4">GAME OVER</h2>
+                    <p class="mb-6">SCORE: <span id="finalScoreEl">0</span></p>
+                    <button id="restartButton" class="game-button">
+                        RESTART
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Área dos Controlos --><div class="flex flex-col items-center">
+        
+            <!-- Nome da Consola (Decorativo) --><div class="text-center text-white text-3xl font-bold" style="text-shadow: 2px 2px #450a0a; font-size: 24px;">MINHOCA
+            </div>
+
+            <!-- Botões Start/Restart (Centro) --><div class="flex justify-center start-select">
+                <button id="restartBtn">RESTART</button>
+                <button id="startBtn">START</button>
+            </div>
+            
+            <!-- Linha de D-Pad e Botão A --><div id="controls-row">
+                
+                <!-- D-Pad (Centro) --><div class="d-pad">
+                    <button id="upButton" class="control-button">↑</button>
+                    <button id="leftButton" class="control-button">←</button>
+                    <button id="rightButton" class="control-button">→</button>
+                    <button id="downButton" class="control-button">↓</button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Configuração do Jogo ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Desativa o suavizador de imagem para um look pixelado
+        ctx.imageSmoothingEnabled = false;
+
+        const scoreEl = document.getElementById('scoreEl');
+        const highScoreEl = document.getElementById('highScoreEl');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreEl = document.getElementById('finalScoreEl');
+        const restartButton = document.getElementById('restartButton');
+        
+        // Resolução interna do jogo (baixa, para ser pixelado)
+        const gameWidth = 240;
+        const gameHeight = 320;
+        canvas.width = gameWidth;
+        canvas.height = gameHeight;
+
+        // --- Variáveis do Jogo ---
+        let snake, food, direction, nextDirection;
+        let score, highScore, gameOver, animationId;
+        let frameCount = 0;
+
+        // --- Comida ---
+        class Food {
+            constructor() {
+                this.x = Math.floor(Math.random() * (gameWidth / 10)) * 10;
+                this.y = Math.floor(Math.random() * (gameHeight / 10)) * 10;
+                this.size = 10;
+                this.color = '#ff0000'; // Vermelho
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        // --- Minhoca ---
+        class Snake {
+            constructor() {
+                this.body = [{x: 100, y: 100}]; // Começa com uma parte
+                this.size = 10;
+                this.color = '#00ff00'; // Verde
+                this.speed = 10; // Move de 10 em 10 pixels
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                this.body.forEach(segment => {
+                    ctx.fillRect(segment.x, segment.y, this.size, this.size);
+                });
+            }
+            
+            update() {
+                const head = {x: this.body[0].x, y: this.body[0].y};
+                
+                if (direction === 'up') head.y -= this.speed;
+                if (direction === 'down') head.y += this.speed;
+                if (direction === 'left') head.x -= this.speed;
+                if (direction === 'right') head.x += this.speed;
+                
+                this.body.unshift(head);
+                
+                // Remove a cauda se não comeu
+                if (!this.ate) {
+                    this.body.pop();
+                } else {
+                    this.ate = false;
+                }
+            }
+            
+            checkCollision() {
+                const head = this.body[0];
+                // Parede
+                if (head.x < 0 || head.x >= gameWidth || head.y < 0 || head.y >= gameHeight) {
+                    return true;
+                }
+                // Próprio corpo
+                for (let i = 1; i < this.body.length; i++) {
+                    if (head.x === this.body[i].x && head.y === this.body[i].y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            eat(food) {
+                const head = this.body[0];
+                if (head.x === food.x && head.y === food.y) {
+                    this.ate = true;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+
+
+        // --- Funções Principais do Jogo ---
+        
+        function init() {
+            snake = new Snake();
+            food = new Food();
+            spawnFood(); // Garante que não spawna na minhoca
+            direction = 'right';
+            nextDirection = 'right';
+            
+            score = 0;
+            highScore = localStorage.getItem('snakeHighScore') || 0; 
+            gameOver = false;
+            frameCount = 0;
+            
+            scoreEl.innerText = score;
+            highScoreEl.innerText = highScore;
+            gameOverScreen.classList.add('hidden');
+            gameOverScreen.classList.remove('flex');
+
+            if (animationId) cancelAnimationFrame(animationId);
+            animate();
+        }
+
+        function spawnFood() {
+            food = new Food();
+            // Garante que não spawna na minhoca
+            for (let segment of snake.body) {
+                if (segment.x === food.x && segment.y === food.y) {
+                    spawnFood();
+                    return;
+                }
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            cancelAnimationFrame(animationId);
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snakeHighScore', highScore);
+                highScoreEl.innerText = highScore;
+            }
+            
+            finalScoreEl.innerText = score;
+            gameOverScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('flex');
+        }
+
+        // --- O Loop do Jogo (Animação) ---
+        function animate() {
+            if (gameOver) return;
+            
+            animationId = requestAnimationFrame(animate);
+            
+            // Limpa o ecrã a preto (SEM RASTO/BLUR)
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, gameWidth, gameHeight);
+            
+            // Move a cada 10 frames
+            if (frameCount % 10 === 0) {
+                // Atualiza direção
+                direction = nextDirection;
+                
+                // Atualiza minhoca
+                snake.update();
+                
+                // Verifica colisão
+                if (snake.checkCollision()) {
+                    endGame();
+                    return;
+                }
+                
+                // Verifica se comeu
+                if (snake.eat(food)) {
+                    score += 10;
+                    scoreEl.innerText = score;
+                    spawnFood();
+                }
+            }
+            
+            // Desenha minhoca
+            snake.draw();
+            
+            // Desenha comida
+            food.draw();
+            
+            frameCount++;
+        }
+
+        // --- Controlores ---
+        
+        // Teclado
+        const keys = {
+            ArrowLeft: { pressed: false },
+            ArrowRight: { pressed: false },
+            ArrowUp: { pressed: false },
+            ArrowDown: { pressed: false }
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (gameOver && (e.key === ' ' || e.key.toLowerCase() === 'a')) {
+                init();
+                return;
+            }
+            if (gameOver) return;
+            
+            const key = e.key;
+            if (key === 'ArrowLeft' && direction !== 'right') nextDirection = 'left';
+            if (key === 'ArrowRight' && direction !== 'left') nextDirection = 'right';
+            if (key === 'ArrowUp' && direction !== 'down') nextDirection = 'up';
+            if (key === 'ArrowDown' && direction !== 'up') nextDirection = 'down';
+        });
+        
+        // Controlores dos botões no ecrã
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+
+        function setupDirectionButton(button, dir) {
+            button.addEventListener('click', () => {
+                if (gameOver) return;
+                if ((dir === 'left' && direction !== 'right') ||
+                    (dir === 'right' && direction !== 'left') ||
+                    (dir === 'up' && direction !== 'down') ||
+                    (dir === 'down' && direction !== 'up')) {
+                    nextDirection = dir;
+                }
+            });
+        }
+
+        setupDirectionButton(leftButton, 'left');
+        setupDirectionButton(rightButton, 'right');
+        setupDirectionButton(upButton, 'up');
+        setupDirectionButton(downButton, 'down');
+        
+        // Botões Start e Restart
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        startBtn.addEventListener('click', () => {
+            init();
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            init();
+        });
+        
+        // Botão de recomeçar (do game over)
+        restartButton.addEventListener('click', () => {
+            init();
+        });
+
+        // --- Iniciar o Jogo ---
+        // Removido init() automático, agora usa o botão START
+        
+    </script>
+</body>
+</html>
